@@ -1,0 +1,97 @@
+---
+title: "Assignment 1"
+author: "Jinfei Xue"
+date: "Sep 16, 2018"
+output: 
+  word_document: default
+  html_document: default
+---
+
+## Document assignment
+
+Consider the following situation:
+A sloppy printer produces books with an average of 2 misprints per page. You want to know how many pages have more than k misprints in a book of n pages. Make an n x k table that shows the relationship between the total number of pages in a book and the number of pages with k misprints.
+
+Show and explain your work. Include equations and calculations to teach the reader how to solve the problem. Include an image of a book.
+
+Push your solution to a github repository and submit the url for repository on blackboard. Be sure your repo includes your document as a pdf file and as an RMD file. Include other files needed to recompile your document.
+
+## 1 Calculate $p_k$
+
+In this situation, the misprints in a page are distributed in Poisson Distribution. 
+
+Given the stated mean value of 2 misprints per page, assume the distribution of $M$, the number of misprints on a page, is $Poisson(\lambda = 2)$
+
+Therefore, conditioned on $k$, a limit to be determined, the probability $p_k$ of more than $k$ misprints on a page is:  
+
+$p_k = P(M > k) = 1 - P(M \leq k) =$ 1 - ppois($k$, lambda = 2). 
+
+## 2 Calculate $P(T \leq n | k)$
+
+Probability of $T$ no more than $n$ pages with more than $k$ misprints is:  
+
+$P(T \leq n) =$ pbinom($n$, 50, $p_k$).  
+
+## 3 Make an n x k table
+
+Take n=50, k=20 for example.
+
+### A table of $p_k = P(M > k)$
+
+```{r}
+prob<-1 - ppois(0:20,lambda = 2)
+prob <- as.data.frame(prob)
+k <- 0:20
+prob <- cbind(k, prob)
+library(knitr)
+library(kableExtra)
+p.tab <- kable(prob)
+kable_styling(p.tab, bootstrap_options = "striped", full_width = FALSE, position = "center")
+```
+
+### A table of n x k
+
+the input in the table represent the value of $P(T \leq n | K=k)$. The row represents the number of pages whose misprints are more than $k$.
+
+```{r}
+prob<- as.vector(prob[,2])
+row_k<-vector(mode = "numeric",length = 0)
+result<-rep(NULL,51)
+for(j in 1:21){
+  for(i in 1:51){
+    b<-prob[j]
+    row_k[i]<-pbinom(i-1, size = 50, b)
+  }
+  result<-rbind(result,row_k)
+}
+table<-as.data.frame(result)
+colnames(table)=paste(0:50,"pages",sep="")
+rownames(table)=0:20
+library(knitr)
+library(kableExtra)
+nk.tab_1 <- kable(table[,1:8])
+nk.tab_2 <- kable(table[,9:16])
+nk.tab_3 <- kable(table[,17:24])
+nk.tab_4 <- kable(table[,25:32])
+nk.tab_5 <- kable(table[,33:40])
+nk.tab_6 <- kable(table[,41:48])
+nk.tab_7 <- kable(table[,49:51])
+kable_styling(nk.tab_1, bootstrap_options = "striped", full_width = FALSE, position = "left")
+kable_styling(nk.tab_2, bootstrap_options = "striped", full_width = FALSE, position = "left")
+kable_styling(nk.tab_3, bootstrap_options = "striped", full_width = FALSE, position = "left")
+kable_styling(nk.tab_4, bootstrap_options = "striped", full_width = FALSE, position = "left")
+kable_styling(nk.tab_5, bootstrap_options = "striped", full_width = FALSE, position = "left")
+kable_styling(nk.tab_6, bootstrap_options = "striped", full_width = FALSE, position = "left")
+kable_styling(nk.tab_7, bootstrap_options = "striped", full_width = FALSE, position = "center")
+```
+
+
+## Book Picture
+
+```{r}
+download.file(url = "http://assets.cambridge.org/97805211/12437/cover/9780521112437.jpg",
+          destfile = "book.jpg",
+          mode = 'wb')
+knitr::include_graphics(path = "book.jpg")
+```
+
