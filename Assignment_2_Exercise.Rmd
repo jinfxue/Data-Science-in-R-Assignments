@@ -1,0 +1,183 @@
+---
+title: "Assignment 2-Exercise"
+author: "Jinfei Xue"
+date: "September 24, 2018"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 3.5.1
+
+## 2. What do the empty cells in plot with facet_grid(drv ~ cyl) mean? How do they relate to this plot?
+
+### the original plot
+```{r}
+library(ggplot2)
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = drv, y = cyl))
+```
+
+### the plot with facet_grid(drv ~ cyl)
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = drv, y = cyl)) +
+  facet_grid(drv ~ cyl)
+```
+
+*There exist several empty cells in plots shown above. They mean there are no observations in the data that have that specific combination of values.*
+
+*For instance, in these plots we can say that there are no vehicles with 4 or 5 cylinders that are also rear wheel drive (r). *
+
+*The plot is similar to the original one because each facet only appears to have a single data point.*
+
+## 3. What plots does the following code make? What does . do?
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(drv ~ .)
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(. ~ cyl)
+```
+
+*. represents no variable. That is to say, this results in a plot faceted on a single dimension rather than an N by N grid in facet_grid() function.*
+
+
+# 3.6.1
+
+## 6. Recreate the R code necessary to generate the following graphs.
+
+```{r}
+#plot 1
+ggplot(data = mpg, mapping = aes(x=displ,y=hwy)) +
+  geom_smooth(se = FALSE)+ 
+  geom_point()
+
+#plot 2
+ggplot(data = mpg, mapping = aes(x=displ,y=hwy,group=drv)) +
+  geom_smooth(se = FALSE)+ 
+  geom_point()
+
+#plot 3
+ggplot(data = mpg, mapping = aes(x=displ,y=hwy,group=drv)) +
+  geom_smooth(se = FALSE,aes(colour=drv))+ 
+  geom_point(aes(colour=drv))
+
+#plot 4
+ggplot(data = mpg, mapping = aes(x=displ,y=hwy)) +
+  geom_smooth(se = FALSE)+ 
+  geom_point(aes(colour=drv))
+
+#plot 5
+ggplot(data = mpg, mapping = aes(x=displ,y=hwy,group=drv)) +
+  geom_smooth(se = FALSE,aes(linetype=drv))+ 
+  geom_point(aes(colour=drv))
+
+#plot 6
+ggplot(data = mpg, mapping = aes(x=displ,y=hwy)) +
+  geom_point(aes(colour=drv))
+
+```
+
+# 5.2.4
+
+## 1. Find all flights that:
+
+### 1> Had an arrival delay of two or more hours
+
+```{r}
+library(nycflights13)
+library(tidyverse)
+flights_1<-filter(flights, arr_delay>=120)
+flights_1
+```
+
+### 2> Flew to Houston (IAH or HOU)
+
+```{r}
+flights_2<-filter(flights, dest %in% c('IAH', 'HOU'))
+flights_2
+```
+
+### 3> Were operated by United, American, or Delta
+
+```{r}
+flights_3<-filter(flights, carrier %in% c('UA', 'AA', 'DL'))
+flights_3
+```
+
+### 4> Departed in summer (July, August, and September)
+
+```{r}
+flights_4<-filter(flights, month %in% c(7, 8, 9))
+flights_4
+```
+
+### 5> Arrived more than two hours late, but didn¡¯t leave late
+```{r}
+flights_5<-filter(flights, arr_delay > 120, dep_delay <= 0)
+flights_5
+```
+
+### 6> Were delayed by at least an hour, but made up over 30 minutes in flight
+```{r}
+flights_6<-filter(flights, dep_delay >= 60, dep_delay-arr_delay > 30)
+flights_6
+```
+
+### 7> Departed between midnight and 6am (inclusive)
+```{r}
+flights_7<-filter(flights, dep_time >= 2400 | dep_time <= 600)
+flights_7
+```
+
+## 2. Another useful dplyr filtering helper is between(). What does it do? Can you use it to simplify the code needed to answer the previous challenges?
+
+*Between is a shorter, faster way of testing two inequalities at once: it tests if its first argument is greater than or equal to its second position, and less than or equal to its third position.*
+
+```{r}
+flights_7<-filter(flights, !between(dep_time, 601, 2359))
+flights_7
+```
+
+## 3. How many flights have a missing dep_time? What other variables are missing? What might these rows represent?
+
+```{r}
+sum(is.na(flights$dep_time))
+map_dbl(flights, ~ sum(is.na(.x)))
+```
+
+*There are 8255 flights which have a missing dep_time.*
+
+*Also, the table shows 8255 flights have a missing dep_delay, 8713 flights have a missing arr_time, 9430 flights have a missing arr_delay, and 9430 flights have a missing air_time.*
+
+*Those rows represent that some flights are failed to depart or arrive.*
+
+## 4. Why is NA ^ 0 not missing? Why is NA | TRUE not missing? Why is FALSE & NA not missing? Can you figure out the general rule? (NA * 0 is a tricky counterexample!)
+
+*NA ^ 0 is not missing because anything to the power of 0 is 1.*
+
+*NA | TRUE is not missing because the whole expression means NA or TRUE, it will return TRUE.(as long as one of the terms is true, the expression evaluates to TRUE)*
+
+*FALSE & NA is not missing because the whole expression means FALSE and NA, it will return FLASE.(as long as one of the terms is false, the expression evaluates to FALSE)*
+
+*The general rule is that whenever there is a logical expressions, if one can be tested, then the result shouldn't be NA. And any operation that the results is determined, regardless of the number, the inputting NA does not affect the result.*
+
+*$NA \cdot 0$ could be argued to be because the NA could represent Inf, and $Inf \cdot 0$ is NaN (Not a Number), rather than NA. *
+
+
+
+
+
+
+
+

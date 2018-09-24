@@ -1,0 +1,23 @@
+---
+title: "Assignment 2-LakeHuron ggplot"
+author: "Jinfei Xue"
+date: "September 19, 2018"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Re-write the Lake Huron shiny application from last class using ggplot2.
+
+
+```{r eruptions, echo=FALSE}
+LakeHuron<-as.vector(LakeHuron)
+Time<-1875:1972
+data<-data.frame(Time,LakeHuron)
+library(ggplot2)
+ggplot(data) + 
+  geom_line(mapping = aes(x = Time, y = LakeHuron))
+```
