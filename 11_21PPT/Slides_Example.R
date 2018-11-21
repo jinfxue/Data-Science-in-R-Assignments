@@ -1,3 +1,6 @@
+## Make Slides Using R
+## Teammates: Jinfei Xue, Guangyan Yu, Yaotang Luo, Shiyu Zhang
+
 library(officer)
 library(magrittr)
 library(tidyverse)
