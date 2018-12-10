@@ -1,0 +1,45 @@
+---
+title: "Common Words for Wars"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dplyr)
+library(ggplot2)
+cc1 <- load("commonwords_wars.RData")
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Words Table
+
+```{r}
+kableExtra::kable(cc_1[1:30,])
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Word Cloud
+
+```{r}
+word_count <- cc_1 %>%
+  select(word, sum)
+wordcloud2::wordcloud2(word_count,color="random-light",rotateRatio = 0.3)
+```
+
+### Frequency Plot
+
+```{r}
+cc_1[1:10, ] %>%
+  ggplot(aes(word, sum)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip()
+```
+
