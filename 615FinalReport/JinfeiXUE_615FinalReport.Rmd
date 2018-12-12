@@ -5,19 +5,86 @@ date: "Dec 9, 2018"
 output: word_document
 ---
 
-
-```{r}
-word_count <- item_desc %>%
-  inner_join(parts_of_speech) %>% 
-  filter(pos=="Noun") %>% 
-  count(word)
-wordcloud2(word_count,color="random-light",rotateRatio = 0.3)
+```{r, warning=FALSE, message=FALSE}
+library(plotly)
+library(dplyr)
 ```
 
 
+```{r}
+MSD_S <- read.csv("Stanford_MSA_Database.csv")
+```
+
+# Data Cleaning
+
+```{r}
+# Generate a new column
+MSD_S$Total.Number.of.Injured <- MSD_S$Number.of.Civilian.Injured +
+  MSD_S$Number.of.Enforcement.Injured
+
+# Select interesting variables
+MSD <- MSD_S %>%
+  dplyr::select(Title, Location, City, State, Latitude, Longitude, 
+         Total.Number.of.Injured, Total.Number.of.Victims, Date, Day.of.Week,
+         Number.of.shooters, Average.Shooter.Age, Shooter.Sex, Shooter.Race, 
+         Type.of.Gun...General, Total.Number.of.Guns, 
+         Fate.of.Shooter.at.the.scene, Fate.of.Shooter, Shooter.s.Cause.of.Death,
+         School.Related, Place.Type, Targeted.Victim.s...General, 
+         History.of.Mental.Illness...General, Military.Experience)
+  
+# Check NA
+sapply(MSD, function(x) sum(is.na(x)))
+  
+# Structure of the data
+str(MSD)
+summary(MSD)
+
+# Transform the class of variables
+levels(MSD$Shooter.Sex)
+
+# Date
+MSD$Year <- format(as.Date(MSD$Date, format="%m/%d/%Y"),"%Y")
+MSD$Month <- format(as.Date(MSD$Date, format="%m/%d/%Y"),"%m")
+
+```
 
 
+```{r plotly, warning=FALSE, message=FALSE}
+# Plot the total number of victims by timeline
 
+plot_ly(data = MSD
+        ,type = 'scatter'
+        ,mode = 'markers' 
+        ,hoverinfo = 'text'
+        ,x = ~Month
+        ,y = ~Year
+        ,size = ~Total.Number.of.Victims
+        ,color = ~Shooter.Sex
+        ,colors = c('Red', 'Blue', 'Green', 'Black')
+        ,alpha = 0.6
+        ,text = ~paste("Title: ", Title
+               ,"\nLocation: ", Location
+               ,'\n Date: ', Date 
+               ,'\n Total victims : ', Total.Number.of.Victims)) %>% 
+  layout(title = "Mass Shootings in US by years and month"
+         , xaxis = list(title = "Month")
+         , yaxis = list(title = "Years"))
+```
+
+
+```{r}
+# Map
+
+# Total number of victims in each state by years (select year)
+MSD_state <- MSD %>%
+  select(Total.Number.of.Injured, Total.Number.of.Victims, Year)
+  group_by(State) %>%
+  mutate(Sum.Injured=sum(Total.Number.of.Injured)) %>%
+  mutate(Sum.Victims=sum(Total.Number.of.Injured))
+  
+
+
+```
 
 
 
@@ -29,7 +96,36 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
-summary(cars)
+
+leaflet(data=mapStates)%>%
+  addTiles()%>%
+  addPolygons(fillColor = topo.colors(10, alpha = NULL), stroke = FALSE)%>%
+  addMarkers(clusterOptions = markerClusterOptions(),data = db_2014)
+
+#We extract data we use to draw the map.
+db_map<-gun[,c("longitude","latitude","year","n_killed")]
+db_map<-db_map%>%
+  group_by(longitude,latitude,year)%>%
+  summarise(num_kill=sum(n_killed))
+library(leaflet)
+#states <- readOGR(dsn = path3, layer = "cb_2017_us_state_500k", encoding = "UTF-8")
+library(maps)
+mapStates = map("state", fill = TRUE, plot = FALSE)
+leaflet(data = mapStates) %>% addTiles() %>%
+  addPolygons(fillColor = topo.colors(10, alpha = NULL), stroke = FALSE)
+
+##2014 map
+db_2014<-db_map%>%
+  filter(year==2014)
+
+leaflet(data=mapStates)%>%
+  addTiles()%>%
+  addPolygons(fillColor = topo.colors(10, alpha = NULL), stroke = FALSE)%>%
+  addMarkers(clusterOptions = markerClusterOptions(),data = db_2014)
+
+
+
+
 ```
 
 ## Including Plots
