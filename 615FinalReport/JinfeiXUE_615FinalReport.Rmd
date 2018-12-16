@@ -6,6 +6,8 @@ output: word_document
 ---
 
 ```{r, warning=FALSE, message=FALSE}
+library(leaflet)
+library(rgdal)
 library(plotly)
 library(dplyr)
 ```
@@ -25,7 +27,8 @@ MSD_S$Total.Number.of.Injured <- MSD_S$Number.of.Civilian.Injured +
 # Select interesting variables
 MSD <- MSD_S %>%
   dplyr::select(Title, Location, City, State, Latitude, Longitude, 
-         Total.Number.of.Injured, Total.Number.of.Victims, Date, Day.of.Week,
+         Total.Number.of.Injured, Total.Number.of.Fatalities,
+         Total.Number.of.Victims, Date, Day.of.Week,
          Number.of.shooters, Average.Shooter.Age, Shooter.Sex, Shooter.Race, 
          Type.of.Gun...General, Total.Number.of.Guns, 
          Fate.of.Shooter.at.the.scene, Fate.of.Shooter, Shooter.s.Cause.of.Death,
@@ -40,7 +43,9 @@ str(MSD)
 summary(MSD)
 
 # Transform the class of variables
-levels(MSD$Shooter.Sex)
+levels(MSD$Shooter.Race)
+MSD$Shooter.Race <- ifelse(MSD$Shooter.Race%in%c("Asian American","Asian American/Some other race"),
+                           "Asian", ifelse(MSD$Shooter.Race==))
 
 # Date
 MSD$Year <- format(as.Date(MSD$Date, format="%m/%d/%Y"),"%Y")
@@ -49,9 +54,9 @@ MSD$Month <- format(as.Date(MSD$Date, format="%m/%d/%Y"),"%m")
 ```
 
 
-```{r plotly, warning=FALSE, message=FALSE}
-# Plot the total number of victims by timeline
+# plotly: Plot the total number of victims by timeline
 
+```{r plotly, warning=FALSE, message=FALSE}
 plot_ly(data = MSD
         ,type = 'scatter'
         ,mode = 'markers' 
@@ -71,69 +76,160 @@ plot_ly(data = MSD
          , yaxis = list(title = "Years"))
 ```
 
+# plotly: Bar plot with Total victims by Years and Race
 
-```{r}
-# Map
+```{r,warning=FALSE, message=FALSE}
+# Only year
+MSD_yv <- MSD %>%
+  select(Year, Total.Number.of.Victims, Total.Number.of.Injured, 
+         Total.Number.of.Fatalities) %>%
+  group_by(Year) %>%
+  mutate(Sum.Victims=sum(Total.Number.of.Victims)) %>%
+  mutate(Sum.Injured=sum(Total.Number.of.Injured)) %>%
+  mutate(Sum.Fatalities=sum(Total.Number.of.Fatalities)) %>%
+  select(Year, Sum.Victims, Sum.Injured, Sum.Fatalities) %>%
+  unique()
 
-# Total number of victims in each state by years (select year)
+plot_ly(data = MSD_yv
+        ,type = 'bar'
+        ,mode = 'markers' 
+        ,hoverinfo = 'text'
+        ,x = ~Year
+        ,y = ~ `Sum.Victims` 
+        ,color = 'Tomato'
+        ,alpha = 0.9
+        ,text = ~paste(
+               'Injured : ', Sum.Injured,
+               '\n Fatalities : ', Sum.Fatalities
+)) %>% 
+  layout(title = "Number of Total Victims by Years"
+         , xaxis = list(title = "Year")
+         , yaxis = list(title = "Number of Total Victims"))
+
+
+# year + gender
+MSD_ygv <- MSD %>%
+  select(Year, Shooter.Sex, Total.Number.of.Victims) %>%
+  group_by(Year, Shooter.Sex) %>%
+  mutate(Sum.Victims=sum(Total.Number.of.Victims)) %>%
+  select(Year, Shooter.Sex, Sum.Victims) %>%
+  unique()
+
+plot_ly(data = MSD_ygv
+        ,type = 'bar'
+        ,mode = 'markers'
+        ,x = ~Year
+        ,y = ~Sum.Victims
+        ,color = ~Shooter.Sex
+        ,alpha = 0.9) %>% 
+  layout(title = "Total Victims by Gender"
+         , xaxis = list(title = "Year")
+         , yaxis = list(title = "Number of Total Victims")
+         , showlegend = T
+         , barmode = 'stack'
+         , position = 1
+         , xaxis = list(title = "")
+         , yaxis = list(title = "")
+         , legend = list(x = 0, y = 1)
+         , hovermode = 'compare')
+
+# year + race
+MSD_ygr <- MSD %>%
+  select(Year, Shooter.Race, Total.Number.of.Victims) %>%
+  group_by(Year) %>%
+  mutate(Sum.Victims=sum(Total.Number.of.Victims)) %>%
+  select(Year, Shooter.Race, Sum.Victims) %>%
+  unique()
+
+plot_ly(data = MSD_ygr
+        ,type = 'bar'
+        ,mode = 'markers'
+        ,x = ~Year
+        ,y = ~Sum.Victims
+        ,color = ~Shooter.Race
+        ,alpha = 0.9) %>% 
+  layout(title = "Total Victims by Shooter Race"
+         , xaxis = list(title = "Year")
+         , yaxis = list(title = "Number of Total Victims")
+         , showlegend = T
+         , barmode = 'stack'
+         , position = 1
+         , xaxis = list(title = "")
+         , yaxis = list(title = "")
+         , legend = list(x = 0, y = 1)
+         , hovermode = 'compare')
+
+
+
+```
+
+
+# Leaflet: Total number of victims in each state
+
+```{r map_victims, message=FALSE, warning=FALSE}
 MSD_state <- MSD %>%
-  select(Total.Number.of.Injured, Total.Number.of.Victims, Year)
+  select(State, Total.Number.of.Injured, Total.Number.of.Victims) %>%
   group_by(State) %>%
   mutate(Sum.Injured=sum(Total.Number.of.Injured)) %>%
-  mutate(Sum.Victims=sum(Total.Number.of.Injured))
-  
+  mutate(Sum.Victims=sum(Total.Number.of.Victims)) %>%
+  select(State, Sum.Injured, Sum.Victims) %>%
+  unique()
+
+#draw map using leaflet
+# library(sp)
+# library(dplyr)
+# library(WDI)
+## Download data from Natural Earth
+url <- "http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_1_states_provinces.zip"
+tmp <- tempdir()
+file <- basename(url)
+download.file(url, file)
+unzip(file, exdir = tmp)
+## Read the data into R
+state_spatial <- readOGR(dsn=tmp,
+                         layer = "ne_50m_admin_1_states_provinces", 
+                         encoding = "UTF-8")
+#get the states name in spatial data
+a<-state_spatial@data[["gn_name"]] #because the state name in "states" are in lower format
+# state_spatial@data[["gn_name"]]<-a
+data<-sp::merge(state_spatial,MSD_state,by.x="gn_name",by.y="State",sort=FALSE,duplicateGeoms = TRUE,all.x=FALSE)
+labels <- sprintf(
+  "<strong>%s</strong><br/>%s Total number of injured<br/>%g Total number of victims",
+  data$gn_name, data$Sum.Injured, data$Sum.Victims
+) %>% lapply(htmltools::HTML)
 
 
-```
-
-
-
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-
-leaflet(data=mapStates)%>%
+# leaflet
+m <- leaflet(data) %>%
   addTiles()%>%
-  addPolygons(fillColor = topo.colors(10, alpha = NULL), stroke = FALSE)%>%
-  addMarkers(clusterOptions = markerClusterOptions(),data = db_2014)
-
-#We extract data we use to draw the map.
-db_map<-gun[,c("longitude","latitude","year","n_killed")]
-db_map<-db_map%>%
-  group_by(longitude,latitude,year)%>%
-  summarise(num_kill=sum(n_killed))
-library(leaflet)
-#states <- readOGR(dsn = path3, layer = "cb_2017_us_state_500k", encoding = "UTF-8")
-library(maps)
-mapStates = map("state", fill = TRUE, plot = FALSE)
-leaflet(data = mapStates) %>% addTiles() %>%
-  addPolygons(fillColor = topo.colors(10, alpha = NULL), stroke = FALSE)
-
-##2014 map
-db_2014<-db_map%>%
-  filter(year==2014)
-
-leaflet(data=mapStates)%>%
-  addTiles()%>%
-  addPolygons(fillColor = topo.colors(10, alpha = NULL), stroke = FALSE)%>%
-  addMarkers(clusterOptions = markerClusterOptions(),data = db_2014)
-
-
-
+  setView(-96, 37.8, 4)
+#bins
+pal <- colorQuantile("YlOrRd", domain = MSD_state$Sum.Victims)
+#pal(states$Donations)
+m_victims <- m %>% addPolygons(
+  fillColor = ~pal(data$Sum.Victims),
+  weight = 2,
+  opacity = 1,
+  color = "white",
+  dashArray = "3",
+  fillOpacity = 0.7,
+  highlight = highlightOptions(
+    weight = 5,
+    color = "#666",
+    dashArray = "",
+    fillOpacity = 0.7,
+    bringToFront = TRUE),
+  label = labels,
+  labelOptions = labelOptions(
+    style = list("font-weight" = "normal", padding = "3px 8px"),
+    textsize = "15px",
+    direction = "auto")
+) %>%
+  addLegend(pal = pal, values = ~Sum.Victims, opacity = 0.7, title = "Quantile in Total Number of Victims",
+            position = "bottomright")
 
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
