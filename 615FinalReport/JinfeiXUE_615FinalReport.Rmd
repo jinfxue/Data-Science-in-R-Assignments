@@ -253,3 +253,34 @@ ggplot(data = Vtrain) +
 
 
 
+```{r}
+g <- list(
+    scope = 'usa'
+  , projection = list(type = 'albers usa')
+  , showland = TRUE
+  , landcolor = 'black'
+  , subunitwidth = 1
+  , countrywidth = 1
+ , subunitcolor = toRGB("white")
+ , countrycolor = toRGB("white")
+)
+
+plot_geo(MSD
+         #, locationmode = 'USA-states'
+         , sizes = c(10, 300)) %>%
+  add_markers(
+    x = ~Longitude
+    , y = ~Latitude
+    , size = ~Total.Number.of.Victims
+    , color = ~Total.Number.of.Fatalities
+    , colors = colorRamp(c("yellow", "red", "black"))
+    , hoverinfo = "text"
+    , text = ~paste(MSD$Title
+                    , '\n Fatalities: ', MSD$Total.Number.of.Fatalities
+                    , '\n Injured: ', MSD$Total.Number.of.Injured)
+  ) %>%
+  layout(title = 'Geography of Mass Shooting in US', geo = g)
+
+```
+
+

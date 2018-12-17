@@ -1,0 +1,13 @@
+name: 615FinalReport
+title: 615FinalReport
+username:
+account: jinfxue
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 618594
+bundleId: 1768121
+url: https://jinfxue.shinyapps.io/615FinalReport/
+when: 1545043831.07412
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: JinfeiXUE_615FinalReport.Rmd|ne_50m_admin_1_states_provinces.zip
