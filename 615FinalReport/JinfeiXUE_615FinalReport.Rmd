@@ -1,17 +1,25 @@
 ---
 title: "615 Final Report"
 author: "Jinfei Xue"
-date: "Dec 9, 2018"
+date: "Dec 17, 2018"
 output: word_document
+subtitle: "Mass Shootings Analysis in USA"
 ---
 
-```{r, warning=FALSE, message=FALSE}
-library(leaflet)
+```{r, echo=FALSE,warning=FALSE, message=FALSE}
+library(tm)
+library(tidyr)
+library(tidytext)
+library(dplyr)
 library(rgdal)
 library(plotly)
-library(dplyr)
+library(ggplot2)
+library(benford.analysis)
+library(leaflet)
+library(wordcloud2)
 ```
 
+# Data Import
 
 ```{r}
 MSD_S <- read.csv("Stanford_MSA_Database.csv")
