@@ -228,39 +228,28 @@ ui <- dashboardPage(
       tabItem(
         tabName = "tm",
         fluidRow(
-          column(6,
+          column(4,
                  sliderInput("slider8", h4("Word Frequency"),
-                             min=1, max=176, value=c(100,150))
-                 )), 
-        mainPanel(
-          wordcloud2Output("plot8", width = "100%", height = "500px"))
-      ), #End of third tab
-      
-      
-      # 
-      # tabItem(
-      #   tabName = "tm",
-      #   fluidRow(
-      #     box(title = "Controls for plot", solidHeader = TRUE, status = "warning",
-      #         sliderInput("slider8", "Word Frequency",
-      #                     min=1, max=176, value=c(15,170)),
-      #         box(wordcloud2Output("plot8", width = "100%", height = "400px"), 
-      #             solidHeader = TRUE, status = "danger")
-      #     )
-      #   )
-      # ),
+                             min=1, max=176, value=c(40,176))
+                 ), 
+        column(6,
+               wordcloud2Output("plot8", width = "100%", height = "400px"))
+        )
+      ), 
         
       tabItem(
         tabName = "about",
-        h2("Acknowledgement"),
-        h3("I would like to express my deepest appreciation to all those who provided me with the possibility to
-           complete this app. A special gratitude I give to our final project instructor, Mr Wright. Sincere thanks to my classmates, Mr Yan and Miss Rong,
-           who gave me useful suggestions",size = 10,style = "font-family: 'Arial'," ),
-        h2("Reference"),
-        h3("https://rstudio.github.io/shinydashboard/get_started.html",size = 10,style = "font-family: 'Arial'," ),
-        h3("https://datascienceplus.com/building-a-simple-sales-revenue-dashboard-with-r-shiny-shinydashboard/",size = 10,style = "font-family: 'Arial'," ),
+        h3("Notes:"),
+        h4("The goal of this app is to track the particular phenomena of mass shootings 
+           in the U.S. and not gun violence as a whole. While all gun violence is tragic, 
+           it is the seemingly spontaneous shooting incidents that are the most confounding 
+           when looking for answers about motivation, after the fact.",size = 10,style = "font-family: 'Arial'," ),
+        h3("Reference"),
+        h4("https://rstudio.github.io/shinydashboard/get_started.html",size = 10,style = "font-family: 'Arial'," ),
+        h4("https://datascienceplus.com/building-a-simple-sales-revenue-dashboard-with-r-shiny-shinydashboard/",size = 10,style = "font-family: 'Arial'," ),
         br(),
         h3("This shiny app is developed by Jinfei(Fiona) Xue."),
+        h3("Contact Info: jinfxue@bu.edu"),
         br(),
         br()
         )
@@ -447,7 +436,7 @@ server <- function(input, output) {
       unnest_tokens(output=word, input=text) %>%
       anti_join(stop_words) %>%
       count(word, sort = TRUE)%>%
-      filter(n<=input$slider8)
+      filter(n<=input$slider8[2] & n>=input$slider8[1])
     wordcloud2(text_n,color="random-light",rotateRatio = 0.3)
   })
   
