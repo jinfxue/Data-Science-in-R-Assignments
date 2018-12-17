@@ -1,6 +1,8 @@
 library(tm)
 library(tidyr)
 library(dplyr)
+library(rgdal)
+library(plotly)
 library(ggplot2)
 library(shinydashboard)
 library(shiny)
@@ -10,7 +12,8 @@ library(wordcloud2)
 library(DT)
 
 MSD_S <- read.csv("Stanford_MSA_Database.csv")
-Dictionary <- read.csv("Stanford_MSA_Data_Dictionary")
+Dictionary <- read.csv("Stanford_MSA_Data_Dictionary.csv")
+m_victims <- load("leaflet.RData")
 # Generate a new column
 MSD_S$Total.Number.of.Injured <- MSD_S$Number.of.Civilian.Injured +
   MSD_S$Number.of.Enforcement.Injured
@@ -104,7 +107,7 @@ ui <- dashboardPage(
         tabName = "data",
         fluidRow(
           tabBox(width = 12,
-            title = "Mass Shootings in America",id = "dataTabset",
+            title = h3("Mass Shootings Datasets"),id = "dataTabset",
             # The id lets us use input$tabset1 on the server to find the current tab
             tabPanel(h4("Data Discription"),
                      fluidRow(
@@ -121,12 +124,12 @@ ui <- dashboardPage(
             tabPanel(h4("Original Dataset"),
                      fluidRow(
                        box(solidHeader = TRUE, status = "danger"
-                           , DT::dataTableOutput("table"), width = 12, height = 1000)
+                           , DT::dataTableOutput("table"), width = 12, height = 450)
                      )),
             tabPanel(h4("Variable Description"),
                      fluidRow(
                        box(solidHeader = TRUE, status = "danger"
-                           , DT::dataTableOutput("table2"), width = 12, height = 1000)
+                           , DT::dataTableOutput("table2"), width = 12, height = 450)
                      ))
             ))),
           
@@ -245,64 +248,6 @@ ui <- dashboardPage(
 
 server <- function(input, output) {
   output$statemap <- renderLeaflet({
-    MSD_state <- MSD %>%
-      select(State, Total.Number.of.Injured, Total.Number.of.Victims) %>%
-      group_by(State) %>%
-      mutate(Sum.Injured=sum(Total.Number.of.Injured)) %>%
-      mutate(Sum.Victims=sum(Total.Number.of.Victims)) %>%
-      select(State, Sum.Injured, Sum.Victims) %>%
-      unique()
-    
-    #draw map using leaflet
-    # library(sp)
-    # library(dplyr)
-    # library(WDI)
-    ## Download data from Natural Earth
-    url <- "http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_1_states_provinces.zip"
-    tmp <- tempdir()
-    file <- basename(url)
-    download.file(url, file)
-    unzip(file, exdir = tmp)
-    ## Read the data into R
-    state_spatial <- readOGR(dsn=tmp,
-                             layer = "ne_50m_admin_1_states_provinces", 
-                             encoding = "UTF-8")
-    #get the states name in spatial data
-    a<-state_spatial@data[["gn_name"]] #because the state name in "states" are in lower format
-    # state_spatial@data[["gn_name"]]<-a
-    data<-sp::merge(state_spatial,MSD_state,by.x="gn_name",by.y="State",sort=FALSE,duplicateGeoms = TRUE,all.x=FALSE)
-    labels <- sprintf(
-      "<strong>%s</strong><br/>%s Total number of injured<br/>%g Total number of victims",
-      data$gn_name, data$Sum.Injured, data$Sum.Victims
-    ) %>% lapply(htmltools::HTML)
-    # leaflet
-    m <- leaflet(data) %>%
-      addTiles()%>%
-      setView(-96, 37.8, 4)
-    #bins
-    pal <- colorQuantile("YlOrRd", domain = MSD_state$Sum.Victims)
-    #pal(states$Donations)
-    m_victims <- m %>% addPolygons(
-      fillColor = ~pal(data$Sum.Victims),
-      weight = 2,
-      opacity = 1,
-      color = "white",
-      dashArray = "3",
-      fillOpacity = 0.7,
-      highlight = highlightOptions(
-        weight = 5,
-        color = "#666",
-        dashArray = "",
-        fillOpacity = 0.7,
-        bringToFront = TRUE),
-      label = labels,
-      labelOptions = labelOptions(
-        style = list("font-weight" = "normal", padding = "3px 8px"),
-        textsize = "15px",
-        direction = "auto")
-    ) %>%
-      addLegend(pal = pal, values = ~Sum.Victims, opacity = 0.7, title = "Quantile in Total Number of Victims",
-                position = "bottomright")
     m_victims
   })
   
