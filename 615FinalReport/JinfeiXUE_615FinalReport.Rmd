@@ -43,9 +43,8 @@ str(MSD)
 summary(MSD)
 
 # Transform the class of variables
-levels(MSD$Shooter.Race)
-MSD$Shooter.Race <- ifelse(MSD$Shooter.Race%in%c("Asian American","Asian American/Some other race"),
-                           "Asian", ifelse(MSD$Shooter.Race==))
+#levels(MSD$Shooter.Race)
+
 
 # Date
 MSD$Year <- format(as.Date(MSD$Date, format="%m/%d/%Y"),"%Y")
@@ -227,9 +226,30 @@ m_victims <- m %>% addPolygons(
 ) %>%
   addLegend(pal = pal, values = ~Sum.Victims, opacity = 0.7, title = "Quantile in Total Number of Victims",
             position = "bottomright")
-
+m_victims
 ```
 
+```{r}
+# location
+MSD_lo <- MSD %>%
+  select(Place.Type, School.Related,Type.of.Gun...General,Total.Number.of.Victims) %>%
+  group_by(Place.Type) %>%
+  mutate(Sum.Victims=sum(Total.Number.of.Victims)) %>%
+  select(Year, Shooter.Sex) %>%
+  unique()
+
+
+ggplot(data = Vtrain) +
+  aes(x = HiveCondition, y = FS_Honey, fill = HiveCondition) +
+  geom_boxplot() +
+  labs(title = 'Frame Sides of Honey per Box vs. Hive Condition',
+    x = 'Hive Condition',
+    y = 'Frame Sides of Honey per Box') +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
 
 
 
