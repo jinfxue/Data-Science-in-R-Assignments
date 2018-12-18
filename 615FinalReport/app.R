@@ -16,11 +16,11 @@ library(DT)
 MSD_S <- read.csv("Stanford_MSA_Database.csv")
 Dictionary <- read.csv("Stanford_MSA_Data_Dictionary.csv")
 
-# Generate a new column
+# Generate a new column: Total.Number.of.Injured
 MSD_S$Total.Number.of.Injured <- MSD_S$Number.of.Civilian.Injured +
   MSD_S$Number.of.Enforcement.Injured
 
-# Select interesting variables
+# Select interesting variables into new dataset: MSD
 MSD <- MSD_S %>%
   dplyr::select(Title, Location, City, State, Latitude, Longitude, 
                 Total.Number.of.Injured, Total.Number.of.Fatalities,
@@ -30,15 +30,22 @@ MSD <- MSD_S %>%
                 Fate.of.Shooter.at.the.scene, Fate.of.Shooter, Shooter.s.Cause.of.Death,
                 School.Related, Place.Type, Targeted.Victim.s...General, 
                 History.of.Mental.Illness...General, Military.Experience)
-# Date
+
+# Split date into Year and Month
 MSD$Year <- format(as.Date(MSD$Date, format="%m/%d/%Y"),"%Y")
 MSD$Month <- format(as.Date(MSD$Date, format="%m/%d/%Y"),"%m")
 
-# School Related
+# Transfer catergories of School.Related
 MSD$School.Related[MSD$School.Related=="Killed"]<- "Unknown"
 MSD$School.Related[MSD$School.Related=="no"]<- "No"
 
-
+# Combine categories of shooter.Race
+MSD$Shooter.Race[MSD$Shooter.Race=="Asian American/Some other race"]<- "Asian American"
+MSD$Shooter.Race[MSD$Shooter.Race=="Black American or African American/Unknown"]<- 
+  "Black American or African American"
+MSD$Shooter.Race[MSD$Shooter.Race=="Some other race"]<- "Some Other Race"
+MSD$Shooter.Race[MSD$Shooter.Race=="White American or European American/Some other Race"]<- 
+  "White American or European American"
 
 
 # MSD_state (leaflet)
@@ -50,6 +57,7 @@ MSD_state <- MSD %>%
   select(State, Sum.Injured, Sum.Victims) %>%
   unique()
 
+###########################################################################
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
   skin = "red",
