@@ -277,8 +277,8 @@ m_victims <- m %>% addPolygons(
   addLegend(pal = pal, values = ~Sum.Victims, opacity = 0.7, title = "Quantile in Total Number of Victims",
             position = "bottomright")
 m_victims
-mapview::mapshot(m_victims, file = "mapstate.png")
-knitr::include_graphics("mapstate.png")
+# mapview::mapshot(m_victims, file = "mapstate.png")
+# knitr::include_graphics("mapstate.png")
 ```
 
 ## 3.7 Map for Mass Shooting Distribution
